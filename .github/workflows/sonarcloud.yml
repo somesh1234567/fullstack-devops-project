@@ -11,9 +11,9 @@ permissions:
   pull-requests: read # allows SonarCloud to decorate PRs with analysis results
 
 jobs:
-  Admin-Analysis:
+  Full-Analysis:
     runs-on: ubuntu-latest
-    name: Admin Portal Scan
+    name: Full Scan
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,10 +24,8 @@ jobs:
         run: |
           echo "listing root directory:"
           ls
-          echo "Listing admin Folder:"
-          ls admin
 
-      - name: Analyze Admin Portal with SonarCloud
+      - name: Analyze FullStack Portal with SonarCloud
         uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -36,72 +34,72 @@ jobs:
           args:
             # Unique keys of project and organization.
             # mandatory
-            -Dsonar.projectKey=somesh1234567_fullstack-devops-project-admin
+            -Dsonar.projectKey=somesh1234567_fullstack-devops-project
             -Dsonar.organization=somesh1234567
-            -Dsonar.sources=admin
+            -Dsonar.sources=admin,frontend,backend
             -Dsonar.verbose=true
           projectBaseDir: .
 
-  Frontend-Analysis:
-    runs-on: ubuntu-latest
-    name: Frontend Scan
-    needs: Admin-Analysis
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # Frontend-Analysis:
+  #   runs-on: ubuntu-latest
+  #   name: Frontend Scan
+  #   needs: Admin-Analysis
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Verify repo structure
-        run: |
-          echo "listing root directory:"
-          ls
-          echo "Listing Frontend Folder:"
-          ls frontend
+  #     - name: Verify repo structure
+  #       run: |
+  #         echo "listing root directory:"
+  #         ls
+  #         echo "Listing Frontend Folder:"
+  #         ls frontend
 
-      - name: Analyze Frontend with SonarCloud
-        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          # Additional arguments for the SonarScanner CLI
-          args:
-            # Unique keys of project and organization.
-            # mandatory
-            -Dsonar.projectKey=somesh1234567_fullstack-devops-project-frontend
-            -Dsonar.organization=somesh1234567
-            -Dsonar.sources=frontend
-            -Dsonar.verbose=true
-          projectBaseDir: .
+  #     - name: Analyze Frontend with SonarCloud
+  #       uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #       with:
+  #         # Additional arguments for the SonarScanner CLI
+  #         args:
+  #           # Unique keys of project and organization.
+  #           # mandatory
+  #           -Dsonar.projectKey=somesh1234567_fullstack-devops-project-frontend
+  #           -Dsonar.organization=somesh1234567
+  #           -Dsonar.sources=frontend
+  #           -Dsonar.verbose=true
+  #         projectBaseDir: .
 
-  Backend-Analysis:
-    runs-on: ubuntu-latest
-    name: Backend Scan
-    needs: Frontend-Analysis
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # Backend-Analysis:
+  #   runs-on: ubuntu-latest
+  #   name: Backend Scan
+  #   needs: Frontend-Analysis
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Verify repo structure
-        run: |
-          echo "listing root directory:"
-          ls
-          echo "Listing Backend Folder:"
-          ls backend
+  #     - name: Verify repo structure
+  #       run: |
+  #         echo "listing root directory:"
+  #         ls
+  #         echo "Listing Backend Folder:"
+  #         ls backend
 
-      - name: Analyze Backend with SonarCloud
-        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          # Additional arguments for the SonarScanner CLI
-          args:
-            # Unique keys of project and organization.
-            # mandatory
-            -Dsonar.projectKey=somesh1234567_fullstack-devops-project-backend
-            -Dsonar.organization=somesh1234567
-            -Dsonar.sources=backend
-            -Dsonar.verbose=true
-          projectBaseDir: .
+  #     - name: Analyze Backend with SonarCloud
+  #       uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #       with:
+  #         # Additional arguments for the SonarScanner CLI
+  #         args:
+  #           # Unique keys of project and organization.
+  #           # mandatory
+  #           -Dsonar.projectKey=somesh1234567_fullstack-devops-project-backend
+  #           -Dsonar.organization=somesh1234567
+  #           -Dsonar.sources=backend
+  #           -Dsonar.verbose=true
+  #         projectBaseDir: .
