@@ -11,9 +11,41 @@ permissions:
   pull-requests: read # allows SonarCloud to decorate PRs with analysis results
 
 jobs:
+  Admin-Analysis:
+    runs-on: ubuntu-latest
+    name: Admin Portal Scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify repo structure
+        run: |
+          echo "listing root directory:"
+          ls
+          echo "Listing admin Folder:"
+          ls admin
+
+      - name: Analyze Admin Portal with SonarCloud
+        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          # Additional arguments for the SonarScanner CLI
+          args:
+            # Unique keys of project and organization.
+            # mandatory
+            -Dsonar.projectKey=somesh1234567_fullstack-devops-project
+            -Dsonar.organization=somesh1234567
+            -Dsonar.sources=admin
+            -Dsonar.verbose=true
+          projectBaseDir: .
+
   Frontend-Analysis:
     runs-on: ubuntu-latest
     name: Frontend Scan
+    needs: Admin-Analysis
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,7 +57,7 @@ jobs:
           echo "listing root directory:"
           ls
           echo "Listing Frontend Folder:"
-          ls front-end-redbus
+          ls frontend
 
       - name: Analyze Frontend with SonarCloud
         uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
@@ -38,7 +70,7 @@ jobs:
             # mandatory
             -Dsonar.projectKey=somesh1234567_fullstack-devops-project
             -Dsonar.organization=somesh1234567
-            -Dsonar.sources=front-end-redbus
+            -Dsonar.sources=frontend
             -Dsonar.verbose=true
           projectBaseDir: .
 
@@ -57,7 +89,7 @@ jobs:
           echo "listing root directory:"
           ls
           echo "Listing Backend Folder:"
-          ls back-end-redbus
+          ls backend
 
       - name: Analyze Backend with SonarCloud
         uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
@@ -70,6 +102,6 @@ jobs:
             # mandatory
             -Dsonar.projectKey=somesh1234567_fullstack-devops-project
             -Dsonar.organization=somesh1234567
-            -Dsonar.sources=back-end-redbus
+            -Dsonar.sources=backend
             -Dsonar.verbose=true
           projectBaseDir: .
