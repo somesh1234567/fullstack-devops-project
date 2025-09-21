@@ -36,7 +36,7 @@ jobs:
           args:
             # Unique keys of project and organization.
             # mandatory
-            -Dsonar.projectKey=somesh1234567_fullstack-devops-project
+            -Dsonar.projectKey=somesh1234567_fullstack-devops-project-admin
             -Dsonar.organization=somesh1234567
             -Dsonar.sources=admin
             -Dsonar.verbose=true
@@ -68,7 +68,7 @@ jobs:
           args:
             # Unique keys of project and organization.
             # mandatory
-            -Dsonar.projectKey=somesh1234567_fullstack-devops-project
+            -Dsonar.projectKey=somesh1234567_fullstack-devops-project-frontend
             -Dsonar.organization=somesh1234567
             -Dsonar.sources=frontend
             -Dsonar.verbose=true
@@ -100,7 +100,7 @@ jobs:
           args:
             # Unique keys of project and organization.
             # mandatory
-            -Dsonar.projectKey=somesh1234567_fullstack-devops-project
+            -Dsonar.projectKey=somesh1234567_fullstack-devops-project-backend
             -Dsonar.organization=somesh1234567
             -Dsonar.sources=backend
             -Dsonar.verbose=true
