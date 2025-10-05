@@ -1,19 +1,31 @@
 name: SonarCloud analysis (Frontend + Backend)
 
 on:
-  push:
-    branches: [ "main" ]
+  # push:
+  #   branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Which Service to deploy?"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - frontend
+          - backend
+          - admin
+
 
 permissions:
   pull-requests: read # allows SonarCloud to decorate PRs with analysis results
 
 jobs:
-  Full-Analysis:
+  sonarcloud:
     runs-on: ubuntu-latest
-    name: Full Scan
+    name: Sonarcloud Full Scan
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,66 +52,99 @@ jobs:
             -Dsonar.verbose=true
           projectBaseDir: .
 
-  # Frontend-Analysis:
-  #   runs-on: ubuntu-latest
-  #   name: Frontend Scan
-  #   needs: Admin-Analysis
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
+  #########################
+  # Build Frontend
+  #########################
+  build-frontend:
+    runs-on: ubuntu-latest
+    name: Frontend
+    needs: sonarcloud
+    if: ${{ github.event.target.inputs == 'frontend' || github.event.target.inputs == 'all' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     - name: Verify repo structure
-  #       run: |
-  #         echo "listing root directory:"
-  #         ls
-  #         echo "Listing Frontend Folder:"
-  #         ls frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-  #     - name: Analyze Frontend with SonarCloud
-  #       uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
-  #       env:
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  #       with:
-  #         # Additional arguments for the SonarScanner CLI
-  #         args:
-  #           # Unique keys of project and organization.
-  #           # mandatory
-  #           -Dsonar.projectKey=somesh1234567_fullstack-devops-project-frontend
-  #           -Dsonar.organization=somesh1234567
-  #           -Dsonar.sources=frontend
-  #           -Dsonar.verbose=true
-  #         projectBaseDir: .
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+      
+      - name: Build project
+        run: npm run build
+        working-directory: frontend
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: frontend/dist/
 
-  # Backend-Analysis:
-  #   runs-on: ubuntu-latest
-  #   name: Backend Scan
-  #   needs: Frontend-Analysis
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
+  docker:
+    name: Docker Build and push - Frontend
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    if: ${{ github.event.target.inputs == 'frontend' || github.event.target.inputs == 'all' }}
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
+    outputs:
+      image_tag: ${{ steps.set_output.outputs.image_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: frontend/dist/
 
-  #     - name: Verify repo structure
-  #       run: |
-  #         echo "listing root directory:"
-  #         ls
-  #         echo "Listing Backend Folder:"
-  #         ls backend
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  #     - name: Analyze Backend with SonarCloud
-  #       uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
-  #       env:
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  #       with:
-  #         # Additional arguments for the SonarScanner CLI
-  #         args:
-  #           # Unique keys of project and organization.
-  #           # mandatory
-  #           -Dsonar.projectKey=somesh1234567_fullstack-devops-project-backend
-  #           -Dsonar.organization=somesh1234567
-  #           -Dsonar.sources=backend
-  #           -Dsonar.verbose=true
-  #         projectBaseDir: .
+      - name: Log in to the Github Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long
+            type=ref,event=branch
+            latest
+      
+      - name: Build the Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          load: true #this will store the image in github actions local docker daemon
+
+      - name: Push docker image to github registry
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: set image tag output
+        id: set_output
+        run: echo "image_tag=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+
+
+
