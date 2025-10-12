@@ -69,6 +69,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -96,7 +97,7 @@ jobs:
       image_tag: ${{ steps.set_output.outputs.image_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 
       
       - name: Download build artifacts
         uses: actions/download-artifact@v4
